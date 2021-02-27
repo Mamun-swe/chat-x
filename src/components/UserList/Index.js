@@ -40,7 +40,7 @@ const Index = ({ sender }) => {
 
     // Go to chat room
     const goChatRoom = id => {
-        history.push(`/chat-room?sender=${id}`)
+        history.push(`/chat-room?reciver=${id}`)
     }
 
     return (

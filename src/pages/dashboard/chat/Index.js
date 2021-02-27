@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import './style.scss'
+import jwt_decode from 'jwt-decode'
 import { useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import queryString from 'query-string'
@@ -9,28 +10,31 @@ import UserList from '../../../components/UserList/Index'
 let socket
 
 const Index = () => {
-    const ENDPOINT = 'https://chat-x-api.herokuapp.com'
-    // const ENDPOINT = 'localhost:4000'
+    // const ENDPOINT = 'https://chat-x-api.herokuapp.com'
+    const ENDPOINT = 'localhost:4000'
     const location = useLocation()
     const query = queryString.parse(location.search)
     const { register, handleSubmit, errors } = useForm()
     const [messages, setMessages] = useState([])
-    const sender = query.sender
-    const room = sender
+    const reciver = query.reciver
+    const token = localStorage.getItem('token')
+    const decode = jwt_decode(token)
 
     useEffect(() => {
+        const room = decode.id + "@" + reciver
         socket = io(ENDPOINT, { transports: ['websocket', 'polling', 'flashsocket'] })
 
         socket.emit("join", { room })
         socket.on("message", (message) => {
             setMessages((exMessage) => [...exMessage, message])
+            // console.log(message)
         })
 
-        console.log(sender);
-    }, [ENDPOINT, sender])
+    }, [ENDPOINT, reciver])
 
     // Submit Message
-    const onSubmit = async (data, event) => {
+    const onSubmit = async (data) => {
+        const room = reciver + '@' + decode.id
         const messageData = { message: data.message, room: room }
 
         setMessages((exMessage) => [...exMessage, messageData])
@@ -48,25 +52,35 @@ const Index = () => {
             <div className="d-flex">
                 {/* Users List Container */}
                 <div className="users-list-container border-right">
-                    <UserList sender={sender} />
+                    <UserList sender={reciver} />
                 </div>
 
                 {/* Message Container */}
                 <div className="message-container flex-fill border-left">
-                    <h1>hello 1</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello</h1>
-                    <h1>hello last</h1>
+
+                    <p>* Mesages {messages.length}</p>
+                    <div className="message-body">
+                        {messages && messages.length > 0 ?
+                            messages.map((items, i) =>
+                                <div className="message" key={i} id="message">
+                                    <p>{items.message}</p>
+                                </div>
+                            ) : null}
+                    </div>
+
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="d-flex">
+                            <div className="flex-fill">
+                                <input
+                                    type="text"
+                                    name="message"
+                                    className="form-control shadow-none"
+                                    ref={register({ required: true })}
+                                />
+                            </div>
+                            <div><button type="submit" className="btn btn-info shadow-none">Send</button></div>
+                        </div>
+                    </form>
                 </div>
             </div>
 
