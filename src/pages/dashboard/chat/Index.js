@@ -10,8 +10,8 @@ import UserList from '../../../components/UserList/Index'
 let socket
 
 const Index = () => {
-    // const ENDPOINT = 'https://chat-x-api.herokuapp.com'
-    const ENDPOINT = 'localhost:4000'
+    const ENDPOINT = 'https://chat-x-api.herokuapp.com'
+    // const ENDPOINT = 'localhost:4000'
     const location = useLocation()
     const query = queryString.parse(location.search)
     const { register, handleSubmit, errors } = useForm()
@@ -21,24 +21,29 @@ const Index = () => {
     const decode = jwt_decode(token)
 
     useEffect(() => {
-        const room = decode.id + "@" + reciver
-        socket = io(ENDPOINT, { transports: ['websocket', 'polling', 'flashsocket'] })
+        if (reciver) {
+            const room = {
+                sender: decode.id,
+                reciver: reciver
+            }
+            socket = io(ENDPOINT, { transports: ['websocket', 'polling', 'flashsocket'] })
 
-        socket.emit("join", { room })
-        socket.on("message", (message) => {
-            setMessages((exMessage) => [...exMessage, message])
-            // console.log(message)
-        })
-
+            socket.emit("join", { room })
+            socket.on("message", (message) => {
+                setMessages((exMessage) => [...exMessage, message])
+            })
+        }
     }, [ENDPOINT, reciver])
 
     // Submit Message
     const onSubmit = async (data) => {
-        const room = reciver + '@' + decode.id
-        const messageData = { message: data.message, room: room }
+        const messageData = {
+            sender: decode.id,
+            reciver: reciver,
+            message: data.message
+        }
 
         setMessages((exMessage) => [...exMessage, messageData])
-
         socket.emit('message', messageData, (response) => {
             if (response) {
                 console.log('Successfully message send');
